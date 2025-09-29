@@ -10,12 +10,16 @@ interface AuthContextType {
   profile: UserProfile | null;
   session: Session | null;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, userData: {
-    full_name: string;
-    role: UserRole;
-    school_id_number?: string;
-    department?: string;
-  }) => Promise<void>;
+  signUp: (
+    email: string,
+    password: string,
+    userData: {
+      full_name: string;
+      role: UserRole;
+      school_id_number?: string;
+      department?: string;
+    }
+  ) => Promise<void>;
   signOut: () => Promise<void>;
   loading: boolean;
 }
@@ -53,7 +57,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setSession(session);
         setUser(session?.user ?? null);
       }
-      
+
       if (session?.user) {
         await loadUserProfile(session.user.id);
       } else {
@@ -76,6 +80,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         if (error) {
           console.error('Error loading user profile:', error);
+
+          // If user doesn't exist in public.users, try to create it from auth.users metadata
+          if (error.code === 'PGRST116') {
+            console.log(
+              'User profile not found, attempting to create from auth metadata...'
+            );
+            await createUserProfileFromAuth(userId);
+            return;
+          }
           return;
         }
 
@@ -84,6 +97,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       } catch (error) {
         console.error('Error loading user profile:', error);
+      }
+    };
+
+    const createUserProfileFromAuth = async (userId: string) => {
+      try {
+        // Get the user's auth data
+        const { data: authUser, error: authError } =
+          await supabase.auth.getUser();
+
+        if (authError || !authUser.user) {
+          console.error('Cannot get auth user data:', authError);
+          return;
+        }
+
+        const metadata = authUser.user.user_metadata || {};
+
+        console.log('Auth user metadata:', metadata);
+        console.log('Auth user email:', authUser.user.email);
+
+        // For now, let's just log the issue and let the user know they need to contact support
+        console.error(
+          'User profile missing - this should have been created by the database trigger'
+        );
+        console.log('User ID:', userId);
+        console.log('Email:', authUser.user.email);
+
+        // You can manually create the record in Supabase Dashboard for now
+      } catch (error) {
+        console.error('Error in createUserProfileFromAuth:', error);
       }
     };
 
@@ -105,8 +147,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signUp = async (
-    email: string, 
-    password: string, 
+    email: string,
+    password: string,
     userData: {
       full_name: string;
       role: UserRole;
@@ -117,26 +159,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        data: {
+          full_name: userData.full_name,
+          role: userData.role,
+          school_id_number: userData.school_id_number,
+          department: userData.department,
+        },
+      },
     });
 
     if (error) {
       throw error;
     }
 
-    if (data.user) {
-      // Create user profile
-      const { error: profileError } = await supabase
-        .from('users')
-        .insert({
-          id: data.user.id,
-          email,
-          ...userData,
-        });
-
-      if (profileError) {
-        throw profileError;
-      }
-    }
+    // The user profile will be automatically created by the database trigger
+    // No need to manually insert into the users table
   };
 
   const signOut = async () => {
@@ -148,15 +186,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{
-      user,
-      profile,
-      session,
-      signIn,
-      signUp,
-      signOut,
-      loading,
-    }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        profile,
+        session,
+        signIn,
+        signUp,
+        signOut,
+        loading,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
