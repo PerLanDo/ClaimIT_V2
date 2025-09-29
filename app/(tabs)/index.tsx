@@ -16,6 +16,9 @@ import { Database } from '../../types/database';
 import { ItemCard } from '../../components/ItemCard';
 import { FloatingActionButton } from '../../components/FloatingActionButton';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTheme } from '../../contexts/ThemeContext';
+import { MSUIITLogo } from '../../components/MSUIITLogo';
+import { ThemeSwitch } from '../../components/ThemeSwitch';
 
 type Item = Database['public']['Tables']['items']['Row'];
 type User = Database['public']['Tables']['users']['Row'];
@@ -28,6 +31,7 @@ export default function DashboardScreen() {
   const [items, setItems] = useState<ItemWithUser[]>([]);
   const [loading, setLoading] = useState(true);
   const { profile, signOut } = useAuth();
+  const { theme } = useTheme();
 
   useEffect(() => {
     loadItems();
@@ -38,10 +42,12 @@ export default function DashboardScreen() {
     try {
       let query = supabase
         .from('items')
-        .select(`
+        .select(
+          `
           *,
           users!items_posted_by_fkey (*)
-        `)
+        `
+        )
         .eq('status', 'active')
         .order('created_at', { ascending: false });
 
@@ -67,7 +73,7 @@ export default function DashboardScreen() {
   const handleItemPress = (item: Item) => {
     router.push({
       pathname: '/item-detail',
-      params: { itemId: item.id }
+      params: { itemId: item.id },
     });
   };
 
@@ -95,29 +101,69 @@ export default function DashboardScreen() {
   ];
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: theme.colors.background }]}
+    >
+      <View style={[styles.header, { backgroundColor: theme.colors.primary }]}>
         <TouchableOpacity onPress={handleSignOut}>
-          <Menu color="#FFFFFF" size={24} />
+          <Menu color={theme.colors.textOnPrimary} size={24} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>CLAIMIT</Text>
-        <View style={{ width: 24 }} />
+
+        <View style={styles.headerCenter}>
+          <MSUIITLogo size="small" showText={false} />
+          <Text
+            style={[styles.headerTitle, { color: theme.colors.textOnPrimary }]}
+          >
+            CLAIMIT
+          </Text>
+        </View>
+
+        <ThemeSwitch size={20} />
       </View>
 
-      <View style={styles.tabContainer}>
+      {/* MSU-IIT Branding Section */}
+      <View
+        style={[
+          styles.brandingSection,
+          { backgroundColor: theme.colors.surface },
+        ]}
+      >
+        <MSUIITLogo size="medium" />
+        <View style={styles.brandingText}>
+          <Text style={[styles.universityName, { color: theme.colors.text }]}>
+            Mindanao State University - Iligan Institute of Technology
+          </Text>
+          <Text
+            style={[
+              styles.appDescription,
+              { color: theme.colors.textSecondary },
+            ]}
+          >
+            Official Lost and Found Tracker for MSU-IIT Community
+          </Text>
+        </View>
+      </View>
+
+      <View
+        style={[styles.tabContainer, { backgroundColor: theme.colors.surface }]}
+      >
         {tabs.map((tab) => (
           <TouchableOpacity
             key={tab.key}
             style={[
               styles.tab,
-              activeTab === tab.key && styles.activeTab,
+              { backgroundColor: theme.colors.background },
+              activeTab === tab.key && {
+                backgroundColor: theme.colors.primary,
+              },
             ]}
             onPress={() => setActiveTab(tab.key)}
           >
             <Text
               style={[
                 styles.tabText,
-                activeTab === tab.key && styles.activeTabText,
+                { color: theme.colors.text },
+                activeTab === tab.key && { color: theme.colors.textOnPrimary },
               ]}
             >
               {tab.label}
@@ -128,7 +174,7 @@ export default function DashboardScreen() {
 
       {loading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#A85751" />
+          <ActivityIndicator size="large" color={theme.colors.primary} />
         </View>
       ) : (
         <FlatList
@@ -139,9 +185,17 @@ export default function DashboardScreen() {
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={() => (
             <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>No items found</Text>
-              <Text style={styles.emptySubtext}>
-                Be the first to report a {activeTab === 'all' ? 'lost or found' : activeTab} item!
+              <Text style={[styles.emptyText, { color: theme.colors.text }]}>
+                No items found
+              </Text>
+              <Text
+                style={[
+                  styles.emptySubtext,
+                  { color: theme.colors.textSecondary },
+                ]}
+              >
+                Be the first to report a{' '}
+                {activeTab === 'all' ? 'lost or found' : activeTab} item!
               </Text>
             </View>
           )}
@@ -156,44 +210,60 @@ export default function DashboardScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
   },
   header: {
-    backgroundColor: '#A85751',
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 16,
+    paddingVertical: 12,
+  },
+  headerCenter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   headerTitle: {
-    color: '#FFFFFF',
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
+  },
+  brandingSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0,0,0,0.1)',
+    gap: 12,
+  },
+  brandingText: {
+    flex: 1,
+  },
+  universityName: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  appDescription: {
+    fontSize: 12,
+    lineHeight: 16,
   },
   tabContainer: {
     flexDirection: 'row',
-    backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: 'rgba(0,0,0,0.1)',
+    paddingHorizontal: 8,
   },
   tab: {
     flex: 1,
-    paddingVertical: 16,
+    paddingVertical: 12,
+    marginHorizontal: 4,
     alignItems: 'center',
-    borderBottomWidth: 2,
-    borderBottomColor: 'transparent',
-  },
-  activeTab: {
-    borderBottomColor: '#A85751',
+    borderRadius: 8,
   },
   tabText: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '500',
-    color: '#6B7280',
-  },
-  activeTabText: {
-    color: '#A85751',
   },
   loadingContainer: {
     flex: 1,
@@ -213,12 +283,10 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#374151',
     marginBottom: 8,
   },
   emptySubtext: {
     fontSize: 14,
-    color: '#6B7280',
     textAlign: 'center',
     paddingHorizontal: 32,
   },

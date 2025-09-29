@@ -1,15 +1,26 @@
 {
   "expo": {
-    "name": "bolt-expo-nativewind",
-    "slug": "bolt-expo-nativewind",
+    "name": "MSU-IIT ClaimIT",
+    "slug": "msu-iit-claimit",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "myapp",
+    "scheme": "msu-claimit",
     "userInterfaceStyle": "automatic",
+    "description": "Official Lost and Found Tracker for MSU-IIT Community",
+    "backgroundColor": "#930215",
+    "primaryColor": "#930215",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.msuiit.claimit"
+    },
+    "android": {
+      "package": "com.msuiit.claimit",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/icon.png",
+        "backgroundColor": "#930215"
+      }
     },
     "web": {
       "bundler": "metro",

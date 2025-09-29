@@ -11,6 +11,9 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTheme } from '../../contexts/ThemeContext';
+import { MSUIITLogo } from '../../components/MSUIITLogo';
+import { ThemeSwitch } from '../../components/ThemeSwitch';
 import { UserRole } from '../../types/database';
 
 export default function LoginScreen() {
@@ -23,6 +26,7 @@ export default function LoginScreen() {
   const [schoolId, setSchoolId] = useState('');
 
   const { signIn, signUp } = useAuth();
+  const { theme } = useTheme();
 
   const roles: { key: UserRole; label: string }[] = [
     { key: 'student', label: 'Student' },
@@ -32,7 +36,11 @@ export default function LoginScreen() {
   ];
 
   const isValidUniversityEmail = (email: string): boolean => {
-    return email.endsWith('.edu') || email.includes('university') || email.includes('edu');
+    return (
+      email.endsWith('.edu') ||
+      email.includes('university') ||
+      email.includes('edu')
+    );
   };
 
   const handleAuth = async () => {
@@ -74,26 +82,54 @@ export default function LoginScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: theme.colors.background }]}
+    >
+      <View style={styles.themeToggle}>
+        <ThemeSwitch />
+      </View>
+
       <View style={styles.content}>
         <View style={styles.header}>
-          <Text style={styles.title}>CLAIMIT</Text>
-          <Text style={styles.subtitle}>Campus Lost & Found</Text>
+          <MSUIITLogo size="large" />
+          <Text style={[styles.title, { color: theme.colors.primary }]}>
+            MSU-IIT CLAIMIT
+          </Text>
+          <Text
+            style={[styles.subtitle, { color: theme.colors.textSecondary }]}
+          >
+            Official Lost & Found Tracker
+          </Text>
+          <Text style={[styles.universityText, { color: theme.colors.text }]}>
+            Mindanao State University - Iligan Institute of Technology
+          </Text>
         </View>
 
-        <View style={styles.roleSelector}>
+        <View
+          style={[
+            styles.roleSelector,
+            { backgroundColor: theme.colors.surface },
+          ]}
+        >
           {roles.map((role) => (
             <TouchableOpacity
               key={role.key}
               style={[
                 styles.roleButton,
-                selectedRole === role.key && styles.roleButtonActive,
+                { backgroundColor: theme.colors.background },
+                selectedRole === role.key && {
+                  backgroundColor: theme.colors.primary,
+                },
               ]}
               onPress={() => setSelectedRole(role.key)}
             >
               <Text
                 style={[
                   styles.roleButtonText,
+                  { color: theme.colors.text },
+                  selectedRole === role.key && {
+                    color: theme.colors.textOnPrimary,
+                  },
                   selectedRole === role.key && styles.roleButtonTextActive,
                 ]}
               >
@@ -104,7 +140,8 @@ export default function LoginScreen() {
         </View>
 
         <Text style={styles.loginText}>
-          {isSignUp ? 'Create Account with' : 'Login with'} your University Email
+          {isSignUp ? 'Create Account with' : 'Login with'} your University
+          Email
         </Text>
 
         {isSignUp && (
@@ -143,9 +180,7 @@ export default function LoginScreen() {
           secureTextEntry
         />
 
-        <Text style={styles.notice}>
-          Only valid university emails allowed
-        </Text>
+        <Text style={styles.notice}>Only valid university emails allowed</Text>
 
         <TouchableOpacity
           style={[styles.loginButton, loading && styles.loginButtonDisabled]}
@@ -272,5 +307,17 @@ const styles = StyleSheet.create({
     color: '#A85751',
     fontSize: 14,
     fontWeight: '500',
+  },
+  themeToggle: {
+    position: 'absolute',
+    top: 50,
+    right: 20,
+    zIndex: 1,
+  },
+  universityText: {
+    fontSize: 12,
+    textAlign: 'center',
+    marginTop: 8,
+    paddingHorizontal: 20,
   },
 });
